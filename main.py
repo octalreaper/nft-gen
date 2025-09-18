@@ -6,8 +6,6 @@ import json
 
 TOTAL_IMAGES = 10
 
-all_images = []
-
 w, h = 220, 220
 
 x_offset = 10
@@ -109,3 +107,75 @@ collar_list = [[40, 110, 110, 120], ]
 
 # SIGN
 sign_list = [[70, 120, 80, 130], ]
+
+
+def create_new_image():
+    new_image = {"Background": random.choices(bg_colors, bgc_weights)[0],
+                 "Body": random.choices(cat_colors, cc_weights)[0], "Eyes": random.choices(eye_colors, ec_weights)[0]}
+
+    # For each trait category, select a random trait based on the weightings
+
+    if new_image in all_images:
+        return create_new_image()
+    else:
+        return new_image
+
+
+def all_images_unique(all_images):
+    seen = list()
+    return not any(i in seen or seen.append(i) for i in all_images)
+
+
+def fdraw(arr, col):
+    xy = [0, 0, 0, 0]
+    for i in arr:
+        if len(i) == 4:
+            xy[0] = i[0] + x_offset
+            xy[1] = i[1] + y_offset
+            xy[2] = i[2] + x_offset
+            xy[3] = i[3] + y_offset
+            draw.rectangle(xy, fill=col)
+
+def ensure_dirs(dirs: list[str]) -> None:
+    for d in dirs:
+        os.makedirs(d, exist_ok=True)
+
+if __name__ == '__main__':
+
+    all_images = []
+
+    ensure_dirs([
+        "./content/images/",
+        "./content/metadata/"
+    ])
+
+    for i in range(TOTAL_IMAGES):
+        new_trait_image = create_new_image()
+
+        all_images.append(new_trait_image)
+
+    tid = 0
+    for item in all_images:
+        item["tokenId"] = tid
+        tid = tid + 1
+
+    if all_images_unique(all_images):
+        for data in all_images:
+            # print(data)
+            print(data['Background'], data['Body'], data['Eyes'], data['tokenId'])
+            im = PI.new(mode=img_mode, size=(w, h), color=data['Background'])
+            draw = ImageDraw.Draw(im)
+            fdraw(body_list, data['Body'])
+            fdraw(outline_list, block_color)
+            fdraw(face_list, face_color)
+            fdraw(nose_list, "Black")
+            fdraw(eyes_list, data['Eyes'])
+            fdraw(ears_list, "Gray")
+            fdraw(collar_list, "Blue")
+            fdraw(sign_list, "Gold")
+            im.save("content/images/" + str(data['tokenId']) + ".png")
+
+    # GENERATE METADATA
+    with open('content/metadata/metadata.json', 'w') as outfile:
+        json.dump(all_images, outfile, indent=4)
+
